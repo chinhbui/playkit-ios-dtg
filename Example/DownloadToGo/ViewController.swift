@@ -12,7 +12,13 @@ import Toast
 import PlayKit
 import PlayKitProviders
 
-let defaultAudioBitrateEstimation: Int = 64000
+import Files
+import RBSRealmBrowser
+import FileBrowser
+
+
+//let defaultAudioBitrateEstimation: Int = 64000
+let defaultAudioBitrateEstimation: Int = 192_000
 
 func maybeSetSmallDuration(entry: PKMediaEntry) {
     if let minutes = setSmallerOfflineDRMExpirationMinutes {
@@ -42,10 +48,30 @@ class Item {
         let title = json.title ?? json.id
         
         if let partnerId = json.partnerId {
-            self.init(title, id: json.id, partnerId: partnerId, ks: json.ks, env: json.env, ott: json.ott ?? false, ottParams: json.ottParams)
+            self.init(title,
+                      id: json.id,
+                      partnerId: partnerId,
+                      ks: json.ks,
+                      env: json.env,
+                      ott: json.ott ?? false,
+                      ottParams: json.ottParams)
+            
         } else if let url = json.url {
-            self.init(title, id: json.id, url: url)
-        } else {
+            if let _ = json.fpt {
+                let licenseUri = "https://lic.drmtoday.com/license-server-fairplay"
+                self.init(json.title!,
+                          id: json.id,
+                          url: json.url!,
+                          base64: FPGetter.shared.cer,
+                          licenseUri : licenseUri)
+                
+            } else {
+                self.init(title,
+                id: json.id,
+                url: url)
+            }
+            
+        } else  {
             fatalError("Invalid item, missing `partnerId` and `url`")
         }
         self.options = json.options?.toOptions()
@@ -62,20 +88,40 @@ class Item {
         self.partnerId = nil
     }
     
+    init(_ title: String, id: String, url: String, base64: String, licenseUri: String ) {
+        self.id = id
+        self.title = title
+        self.url = URL(string: url)!
+        
+        let source = PKMediaSource(id, contentUrl: URL(string: url))
+        
+        let fps = FairPlayDRMParams(licenseUri: licenseUri,
+                                    base64EncodedCertificate: base64)
+        fps.requestAdapter = MyPKRequestParamsAdapter()
+        source.drmData = [fps]
+        
+        self.entry = PKMediaEntry(id, sources: [source])
+        
+        self.partnerId = nil
+    }
+    
     init(_ title: String, id: String, partnerId: Int, ks: String? = nil, env: String? = nil, ott: Bool = false, ottParams: ItemOTTParamsJSON? = nil) {
         self.id = id
         self.title = title
         self.partnerId = partnerId
         self.url = nil
         
-        let session = SimpleSessionProvider(serverURL: env ?? Item.defaultEnv, partnerId: Int64(partnerId), ks: ks)
+        let session = SimpleSessionProvider(serverURL: env ?? Item.defaultEnv,
+                                            partnerId: Int64(partnerId),
+                                            ks: ks)
         
         let provider: MediaEntryProvider
         
         if ott {
-            let ottProvider = PhoenixMediaProvider().set(sessionProvider: session)
+            let ottProvider = PhoenixMediaProvider()
+                .set(sessionProvider: session)
                 .set(assetId: self.id)
-                .set(type: .media)
+                
             
             if let ottParams = ottParams {
                 if let format = ottParams.format {
@@ -86,8 +132,7 @@ class Item {
             provider = ottProvider
             
         } else {
-            provider = OVPMediaProvider(session)
-                .set(entryId: id)
+            provider = OVPMediaProvider(session).set(entryId: id)
         }
         
         provider.loadMedia { (entry, error) in
@@ -104,6 +149,127 @@ class Item {
     }
 }
 
+struct DRMTodayLicenseResponseContainer: Codable {
+    var data: String?
+    var expiryDate: TimeInterval?
+}
+
+class MyFairPlayLicenseProvider : FairPlayLicenseProvider {
+    func getLicense(spc: Data, assetId: String, requestParams: PKRequestParams, callback: @escaping (Data?, TimeInterval, Error?) -> Void) {
+        
+        print("getLicense spc: \(spc) --- assetId : \(assetId)")
+        print("getLicense url : \(requestParams.url)")
+        
+        var request = URLRequest(url: requestParams.url)
+            
+            // uDRM requires application/octet-stream as the content type.
+            request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+            
+            // Also add the user agent
+            //request.setValue(PlayKitManager.userAgent, forHTTPHeaderField: "User-Agent")
+            
+            request.setValue(FPGetter.pHeader.toBase64(),
+                             forHTTPHeaderField: "x-dt-custom-data")
+            
+            // Add other optional headers
+            if let headers = requestParams.headers {
+                for (header, value) in headers {
+                    request.setValue(value, forHTTPHeaderField: header)
+                }
+            }
+            let spcEncoded = spc.base64EncodedString().stringByAddingPercentEncodingForRFC3986()!
+            
+            let url = URLComponents(string: assetId)
+            let _assetId = url?.queryItems?.first(where: { $0.name == "assetId" })?.value ?? ""
+            let variantId = url?.queryItems?.first(where: { $0.name == "variantId" })?.value ?? ""
+        
+            
+            let postString = "spc=\(spcEncoded)&assetId=\(_assetId)&variantId=\(variantId)&offline=true"
+            PKLog.debug("ContentID : \(postString)")
+            let postData = postString.data(using: .ascii, allowLossyConversion: true)
+        
+            //request.httpBody = spc.base64EncodedData()
+            request.httpBody = postData
+            request.httpMethod = "POST"
+            request.setValue(String(postData!.count), forHTTPHeaderField: "Content-Length")
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        
+            //PKLog.debug("Sending SPC to server : %@")
+            //PKLog.debug("Sending SPC : \(postString)")
+            let startTime = Date.timeIntervalSinceReferenceDate
+            let dataTask = URLSession.shared.dataTask(with: request) { (data: Data?, response: URLResponse?, error: Error?) -> Void in
+                
+                if let error = error {
+                    callback(nil, 0, FPSError.serverError(error, requestParams.url))
+                    return
+                }
+
+                do {
+                    let endTime: Double = Date.timeIntervalSinceReferenceDate
+                    PKLog.debug("Got response in \(endTime-startTime) sec")
+                    
+                    guard let data = data, data.count > 0 else {
+                        callback(nil, 0, FPSError.malformedServerResponse)
+                        return
+                    }
+                    /*
+                    guard let decodedString = String(data: data, encoding: .utf8) else {
+                        callback(nil, 0, FPSError.malformedServerResponse)
+                        return
+                    }
+                    print("decodedString : \(decodedString)")
+                    let lic = try JSONDecoder().decode(DRMTodayLicenseResponseContainer.self, from: data)
+                    
+                    guard let ckc = lic.data else {
+                        callback(nil, 0, FPSError.noCKCInResponse)
+                        return
+                    }
+                    
+                    guard let ckcData = Data(base64Encoded: ckc) else {
+                        callback(nil, 0, FPSError.malformedCKCInResponse)
+                        return
+                    }
+                    
+                    callback(ckcData, lic.expiryDate ?? 0, nil)
+                    */
+                    
+                    if let httpResponse = response as? HTTPURLResponse{
+                        if httpResponse.statusCode == 200 {
+                            if let b64 = Data(base64Encoded: data) {
+                                print("getLicense ✅ " , b64)
+                                callback(b64, 300, nil)
+                            } else {
+                                print("getLicense ⚠️ \(httpResponse.statusCode)")
+                                callback(nil, 0, FPSError.malformedCKCInResponse)
+                            }
+                        } else {
+                            print("getLicense ⚠️ \(httpResponse.statusCode)")
+                            guard let _ = Data(base64Encoded: data) else {
+                                callback(nil, 0, FPSError.malformedCKCInResponse)
+                                return
+                            }
+                        }
+                    }
+                }
+//                catch let e {
+//                    callback(nil, 0, e)
+//                }
+            }
+            dataTask.resume()
+        }
+}
+
+class MyPKRequestParamsAdapter : PKRequestParamsAdapter {
+    func updateRequestAdapter(with player: Player) {
+        
+    }
+    
+    func adapt(requestParams: PKRequestParams) -> PKRequestParams {
+        var headers = requestParams.headers ?? [:]
+        headers["Referrer"] = "Demo"
+        return PKRequestParams(url: requestParams.url, headers: headers)
+    }
+}
 
 class ViewController: UIViewController {
     let dummyFileName = "dummyfile"
@@ -122,7 +288,7 @@ class ViewController: UIViewController {
         didSet {
             do {
                 let item = try cm.itemById(selectedItem.id)
-                selectedDTGItem = item
+                selectedDTGItem = item  
                 DispatchQueue.main.async {
                     self.statusLabel.text = item?.state.asString() ?? ""
                     if item?.state == .completed {
@@ -151,18 +317,18 @@ class ViewController: UIViewController {
     @IBOutlet weak var languageCodeTextField: UITextField!
     @IBOutlet weak var progressLabel: UILabel!
     
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
+    fileprivate func setup() {
         let recognizer = UITapGestureRecognizer(target: self, action: #selector(showInfo(_:)))
         progressLabel.addGestureRecognizer(recognizer)
         
         let jsonURL = Bundle.main.url(forResource: "items", withExtension: "json")!
-//        let jsonURL = URL(string: "http://localhost/items.json")!
+        //        let jsonURL = URL(string: "http://localhost/items.json")!
         let json = try! Data(contentsOf: jsonURL)
         let loadedItems = try! JSONDecoder().decode([ItemJSON].self, from: json)
         
-        items = loadedItems.map{Item(json: $0)}
+        items = loadedItems.map{
+            Item(json: $0)
+        }
         
         let completedItems = try! self.cm.itemsByState(.completed)
         for (index, item) in completedItems.enumerated() {
@@ -170,9 +336,12 @@ class ViewController: UIViewController {
                 self.items.insert(Item(item.id, id: item.id, url: "file://foo.bar/baz"), at: index)
             }
         }
-
+        
         cm.setDefaultAudioBitrateEstimation(bitrate: defaultAudioBitrateEstimation)
-
+        
+        lam.fairPlayLicenseProvider = MyFairPlayLicenseProvider()
+        lam.licenseRequestAdapter = MyPKRequestParamsAdapter()
+        
         // initialize UI
         selectedItem = items.first!
         itemPickerView.delegate = self
@@ -190,6 +359,17 @@ class ViewController: UIViewController {
         
         // setup content manager
         cm.delegate = self
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        let cerURI = "https://lic.drmtoday.com/license-server-fairplay/cert"
+        FPGetter.getCertificate(uri: cerURI) { (data, time, err) in
+            DispatchQueue.main.async {
+                self.setup()
+            }
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -237,10 +417,10 @@ class ViewController: UIViewController {
                 options = DTGSelectionOptions()
                     .setMinVideoHeight(300)
 //                    .setMinVideoWidth(1000)
-                    .setMinVideoBitrate(.avc1, 3_000_000)
-                    .setMinVideoBitrate(.hevc, 5_000_000)
-                    .setPreferredVideoCodecs([.hevc, .avc1])
-                    .setPreferredAudioCodecs([.ac3, .mp4a])
+//                    .setMinVideoBitrate(.avc1, 3_000_000)
+//                    .setMinVideoBitrate(.hevc, 5_000_000)
+                    .setPreferredVideoCodecs([.hevc, .avc1, .mp4a])
+//                    .setPreferredAudioCodecs([.ac3, .mp4a,.avc1])
                     .setAllTextLanguages()
 //                    .setTextLanguages(["en"])
 //                    .setAudioLanguages(["en", "ru"])
@@ -403,6 +583,53 @@ class ViewController: UIViewController {
         toast(msg)
     }
     
+    @IBAction func showFile(_ sender: Any) {
+           let paths = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
+           let documentsDirectory = paths[0]
+           
+           let home = documentsDirectory.path //+ "/KalturaDTG/items/"
+           let fileBrowser = FileBrowser(initialPath: URL(string: home)!)
+           present(fileBrowser, animated: true, completion: nil)
+       }
+       
+       func showDownloadFolder(id:String , sub:String){
+           let paths = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
+           let documentsDirectory = paths[0]
+           
+           let home = documentsDirectory.path + "/KalturaDTG/items/" + id + "/" + sub
+           do {
+               try Folder(path: home).files.forEach({
+                   print("Download \(sub) 📄 : ",URL(string: $0.path)?.lastPathComponent ?? "")
+                   if $0.path.contains("m3u8") {
+                       print("Download content : \(try $0.readAsString())")
+                   }
+               })
+               try Folder(path: home).subfolders.forEach({
+                   print("Download \(sub) 🗂 : ",URL(string: $0.path)?.lastPathComponent ?? "")
+               })
+            } catch {
+               print("error : ",error.localizedDescription)
+           }
+       }
+       
+       func discoverItems(id:String , sub:String){
+           let paths = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)
+           let documentsDirectory = paths[0]
+           
+           let home = documentsDirectory.path + "/KalturaDTG/items/" + id + "/"
+           do {
+               try Folder(path: home).files.forEach({
+                   print("DTG>> \(sub) 📄 : ",URL(string: $0.path)?.lastPathComponent ?? "")
+                   print("DTG?? content \(try $0.readAsString())")
+               })
+               try Folder(path: home).subfolders.forEach({
+                   print("DTG>> \(sub) 🗂 : ",URL(string: $0.path)?.lastPathComponent ?? "")
+               })
+            } catch {
+               print("error : ",error.localizedDescription)
+           }
+       }
+    
     @IBAction func actionBarButtonTouched(_ sender: UIBarButtonItem) {
         let actionAlertController = UIAlertController(title: "Perform Action", message: "Please select an action to perform", preferredStyle: .actionSheet)
         // fille device with dummy file action
@@ -524,9 +751,11 @@ extension ViewController {
                     toast("cannot segue to video view controller until download is finished")
                     return false
                 }
+                
                 if item.state == .completed {
                     return true
                 }
+                
                 toast("cannot segue to video view controller until download is finished")
                 return false
             }
@@ -541,11 +770,27 @@ extension ViewController {
         if segue.identifier == self.videoViewControllerSegueIdentifier {
             let destinationVC = segue.destination as! VideoViewController
             do {
-                destinationVC.contentUrl = try self.cm.itemPlaybackUrl(id: self.selectedItem.id)
-                destinationVC.textLanguageCode = self.selectedTextLanguageCode
-                destinationVC.audioLanguageCode = self.selectedAudioLanguageCode
+                if let source = self.selectedItem.entry?.sources?.first ,
+                     let contentUrl = try cm.itemPlaybackUrl(id: self.selectedItem.id) {
+                    print("prepare : \(String(describing: source.contentUrl))")
+                    print("prepare : \(String(describing: source.playbackUrl))")
+                    
+                    lam.registerDownloadedAsset(location: contentUrl, mediaSource: source) { (err) in
+                        if let e = err {
+                            NSLog("register failed with \(e)")
+                        } else {
+                            NSLog("register succeeded")
+                            
+                            destinationVC.assetId = source.id
+                            destinationVC.textLanguageCode = self.selectedTextLanguageCode
+                            destinationVC.audioLanguageCode = self.selectedAudioLanguageCode
+                            destinationVC.contentUrl = contentUrl
+                        }
+                    }
+                }
+                
             } catch {
-                print("error: \(error.localizedDescription)")
+                print("error prepare: \(error.localizedDescription)")
             }
         }
     }
@@ -652,7 +897,8 @@ extension ViewController: UIPickerViewDelegate {
             self.languageCodeTextField.text = "text code: \(self.selectedTextLanguageCode ?? ""), audio code: \(self.selectedAudioLanguageCode ?? "")"
         } else {
             self.itemTextField.text = items[row].title
-            self.selectedItem = items[row]
+            let selected = items[row]
+            self.selectedItem = selected
         }
     }
 }

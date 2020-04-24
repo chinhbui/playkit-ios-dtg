@@ -17,6 +17,7 @@
 		607FACDB1AFB9204008FA782 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 607FACD91AFB9204008FA782 /* Main.storyboard */; };
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
+		73E927A12418982A00403786 /* FPGetter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E927A02418982A00403786 /* FPGetter.swift */; };
 		CA0AA135222D198700FFF90F /* DownloadTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0AA134222D198700FFF90F /* DownloadTest.swift */; };
 		CA0AA138223021D900FFF90F /* items.json in Resources */ = {isa = PBXBuildFile; fileRef = CA0AA137223021BE00FFF90F /* items.json */; };
 		CAB012E1206CCBC400EB3F69 /* Samples.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAB012E0206CCBC400EB3F69 /* Samples.swift */; };
@@ -50,6 +51,7 @@
 		607FACDF1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/LaunchScreen.xib; sourceTree = "<group>"; };
 		607FACE51AFB9204008FA782 /* DownloadToGo_Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DownloadToGo_Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		73E927A02418982A00403786 /* FPGetter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FPGetter.swift; sourceTree = "<group>"; };
 		7F3B47A466BC8A36FE06F00A /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		8031456F9885A9779A8DB1CA /* Pods-DownloadToGo_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DownloadToGo_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-DownloadToGo_Example/Pods-DownloadToGo_Example.release.xcconfig"; sourceTree = "<group>"; };
 		851B12624AD642C17B82940E /* Pods-DownloadToGo_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-DownloadToGo_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-DownloadToGo_Tests/Pods-DownloadToGo_Tests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 			children = (
 				CA0AA137223021BE00FFF90F /* items.json */,
 				607FACD51AFB9204008FA782 /* AppDelegate.swift */,
+				73E927A02418982A00403786 /* FPGetter.swift */,
 				607FACD71AFB9204008FA782 /* ViewController.swift */,
 				20AD661B1F174B0900E8E6D7 /* VideoViewController.swift */,
 				20AD661D1F17A30C00E8E6D7 /* TracksViewController.swift */,
@@ -237,12 +240,12 @@
 				TargetAttributes = {
 					607FACCF1AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
-						DevelopmentTeam = X8RDCFJK95;
+						DevelopmentTeam = F99NBL2J56;
 						LastSwiftMigration = 1020;
 					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
-						DevelopmentTeam = X8RDCFJK95;
+						DevelopmentTeam = F99NBL2J56;
 						LastSwiftMigration = 1020;
 						TestTargetID = 607FACCF1AFB9204008FA782;
 					};
@@ -298,6 +301,8 @@
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-DownloadToGo_Example/Pods-DownloadToGo_Example-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/DownloadToGo/DownloadToGo.framework",
+				"${BUILT_PRODUCTS_DIR}/FileBrowser/FileBrowser.framework",
+				"${BUILT_PRODUCTS_DIR}/Files/Files.framework",
 				"${BUILT_PRODUCTS_DIR}/GCDWebServer/GCDWebServer.framework",
 				"${BUILT_PRODUCTS_DIR}/KalturaNetKit/KalturaNetKit.framework",
 				"${BUILT_PRODUCTS_DIR}/M3U8Kit/M3U8Kit.framework",
@@ -305,6 +310,7 @@
 				"${BUILT_PRODUCTS_DIR}/PlayKit/PlayKit.framework",
 				"${BUILT_PRODUCTS_DIR}/PlayKitProviders/PlayKitProviders.framework",
 				"${BUILT_PRODUCTS_DIR}/PlayKitUtils/PlayKitUtils.framework",
+				"${BUILT_PRODUCTS_DIR}/RBSRealmBrowser/RBSRealmBrowser.framework",
 				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
 				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
 				"${BUILT_PRODUCTS_DIR}/SwiftyJSON/SwiftyJSON.framework",
@@ -315,6 +321,8 @@
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/DownloadToGo.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FileBrowser.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Files.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GCDWebServer.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/KalturaNetKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/M3U8Kit.framework",
@@ -322,6 +330,7 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PlayKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PlayKitProviders.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PlayKitUtils.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RBSRealmBrowser.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftyJSON.framework",
@@ -387,6 +396,7 @@
 				CAB012E1206CCBC400EB3F69 /* Samples.swift in Sources */,
 				20AD661C1F174B0900E8E6D7 /* VideoViewController.swift in Sources */,
 				CAD71F59223E99CC0074CBA4 /* TestTools.swift in Sources */,
+				73E927A12418982A00403786 /* FPGetter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -543,7 +553,7 @@
 			baseConfigurationReference = DC9E0E3C7F4B72EB61E261A5 /* Pods-DownloadToGo_Example.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = X8RDCFJK95;
+				DEVELOPMENT_TEAM = F99NBL2J56;
 				INFOPLIST_FILE = DownloadToGo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -560,7 +570,7 @@
 			baseConfigurationReference = 8031456F9885A9779A8DB1CA /* Pods-DownloadToGo_Example.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = X8RDCFJK95;
+				DEVELOPMENT_TEAM = F99NBL2J56;
 				INFOPLIST_FILE = DownloadToGo/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -576,7 +586,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 851B12624AD642C17B82940E /* Pods-DownloadToGo_Tests.debug.xcconfig */;
 			buildSettings = {
-				DEVELOPMENT_TEAM = X8RDCFJK95;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = F99NBL2J56;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
 					"$(inherited)",
@@ -598,7 +609,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = FF783C19E218DACD10E71B6F /* Pods-DownloadToGo_Tests.release.xcconfig */;
 			buildSettings = {
-				DEVELOPMENT_TEAM = X8RDCFJK95;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				DEVELOPMENT_TEAM = F99NBL2J56;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
 					"$(inherited)",

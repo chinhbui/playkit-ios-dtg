@@ -9,6 +9,11 @@ target 'DownloadToGo_Example' do
   pod 'DownloadToGo', :path => '..'
   
   pod 'PlayKit', '~> 3.12.1'
+  
+  pod 'RBSRealmBrowser', :configurations => ['Debug']
+  pod 'FileBrowser'
+  pod 'Files'
+  
 #  pod 'PlayKit', :path => '../../playkit-ios'
 #  pod 'PlayKit', :git => 'https://github.com/kaltura/playkit-ios', :branch => 'develop'
 

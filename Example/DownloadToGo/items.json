@@ -69,9 +69,29 @@
         }
     },
     {
+        "title": "FPS: FPT - 1",
+        "id": "LetsEat3_T02_DRM_new",
+        "url": "https://bkm.fbox.fpt.vn/bpk-vod/vod-newdrm/default/LetsEat3_T02/LetsEat3_T02/index.m3u8",
+        "fpt": true,
+        "options": {
+            "allAudioLangs": true,
+            "allTextLangs": true,
+        }
+    },
+    {
+        "title": "FPS: FPT - 2",
+        "id": "fptip_IronMan.smil",
+        "url": "https://bkm.fbox.fpt.vn/fptip/smil:IronMan.smil/index.m3u8",
+        "fpt": true,
+        "options": {
+            "allAudioLangs": true,
+            "allTextLangs": true,
+        }
+    },
+    {
         "title": "QA multi/multi",
         "id": "0_mskmqcit",
-        "url": "http://cdntesting.qa.mkaltura.com/p/1091/sp/109100/playManifest/entryId/0_mskmqcit/flavorIds/0_et3i1dux,0_pa4k1rn9/format/applehttp/protocol/http/a.m3u8",
+        "url": "https://bkm.fbox.fpt.vn/bpk-vod/vod-nondrm/default/LetsEat3_T05/LetsEat3_T05/index.m3u8",
         "options": {
             "audioLangs": ["en"],
             "textLangs": ["en", "ru"]

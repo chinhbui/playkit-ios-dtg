@@ -16,6 +16,7 @@ import PlayKitUtils
 
 let KEYFORMAT_FAIRPLAY =    M3U8_EXT_X_KEY_KEYFORMAT + "=\"com.apple.streamingkeydelivery\""
 let MASTER_PLAYLIST_NAME =  "master.m3u8"
+let MEDIA_PLAYLIST_NAME =  "media.orig.txt"
 
 
 class HLSLocalizer {
@@ -231,6 +232,7 @@ class HLSLocalizer {
         
         let target = originalUrl.mediaPlaylistRelativeLocalPath(as: type)
         try save(text: localLines.joined(separator: "\n") as String, as: target)
+        try save(text: localLines.joined(separator: "\n") as String, as: MEDIA_PLAYLIST_NAME)
     }
 
     private func rewriteKeyTag(line: String, mediaUrl: URL) -> String { // has AES-128 key replace uri with local path

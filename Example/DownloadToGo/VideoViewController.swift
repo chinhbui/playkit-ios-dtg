@@ -15,8 +15,17 @@ class VideoViewController: UIViewController {
     let trackViewControllerSegueIdentifier = "tracksViewController"
     
     var isControlsVisible = true
-    var player: Player!
-    var contentUrl: URL?
+    var player: Player = PlayKitManager.shared.loadPlayer(pluginConfig: nil)
+    
+    var contentUrl: URL? {
+        didSet {
+            DispatchQueue.main.async {
+                self.loadPlayer()
+            }
+        }
+    }
+    var assetId : String?
+    
     var textLanguageCode: String?
     var audioLanguageCode: String?
     var tracks: PKTracks?
@@ -35,9 +44,16 @@ class VideoViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        player = PlayKitManager.shared.loadPlayer(pluginConfig: nil)
+        
+    }
+    
+    func loadPlayer(){
+        //player = PlayKitManager.shared.loadPlayer(pluginConfig: nil)
         player.view = self.playerView
         let mediaEntry = localAssetsManager.createLocalMediaEntry(for: "myLocalId", localURL: contentUrl!)
+        
+        print("[VIDEO mediaEntry] : \(mediaEntry.id) contentUrl : \(String(describing: mediaEntry.sources?.first?.contentUrl))")
+        
         // set text language code
         if let textLanguageCode = self.textLanguageCode {
             player.settings.trackSelection.textSelectionMode = .selection
